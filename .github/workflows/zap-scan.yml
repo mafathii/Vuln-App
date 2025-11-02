@@ -3,7 +3,7 @@ name: "OWASP ZAP DAST Scan"
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 18 * * 6' # Runs every Saturday at 18:00 UTC
+    - cron: '0 18 * * 6' # Every Saturday at 18:00 UTC
 
 jobs:
   dast_scan:
@@ -13,20 +13,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Docker
-        run: |
-          echo "Docker is pre-installed on GitHub-hosted runners."
 
-      - name: Build and run app container
+      - name: Build and run DSVPWA container
         run: |
-          docker build -t vuln-app:latest .
-          docker run -d -p 8000:8000 --name vuln-app vuln-app:latest
-          sleep 15 # Wait for the app to fully start
+          docker build -t dsvpwa .
+          docker run -d -p 65413:65413 --name dsvpwa dsvpwa
+          sleep 15 # Wait for the app to start
 
       - name: Run OWASP ZAP Baseline Scan
         run: |
           docker run --network host -v $(pwd):/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-            -t http://localhost:8000 \
+            -t http://localhost:65413 \
             -J zap-report.json \
             -I || true
 
@@ -41,6 +38,7 @@ jobs:
           else
             echo "No ZAP report found."
           fi
+
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         if: always()
