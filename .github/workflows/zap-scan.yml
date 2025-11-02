@@ -22,19 +22,19 @@ jobs:
 
       - name: Run OWASP ZAP Baseline Scan
         run: |
-          docker run --network host -v $(pwd):/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+          mkdir -p zap-results
+          docker run --network host -v $(pwd)/zap-results:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:65413 \
             -J zap-report.json \
             -I || true
-
       - name: ZAP Quick Summary
         if: always()
         run: |
           echo "🔍 OWASP ZAP Summary:"
           if [ -f zap-report.json ]; then
-            alerts=$(jq '.site[0].alerts | length' zap-report.json)
+            alerts=$(jq '.site[0].alerts | length' zap-report.txt)
             echo "Total Alerts Found: $alerts"
-            jq -r '.site[0].alerts[] | "\(.riskdesc): \(.alert)"' zap-report.json | head -n 5
+            jq -r '.site[0].alerts[] | "\(.riskdesc): \(.alert)"' zap-report.txt | head -n 5
           else
             echo "No ZAP report found."
           fi
@@ -44,4 +44,4 @@ jobs:
         if: always()
         with:
           name: zap-report
-          path: zap-report.json
+          path: zap-results/zap-report.txt
