@@ -23,10 +23,14 @@ jobs:
       - name: Run OWASP ZAP Baseline Scan
         run: |
           mkdir -p zap-results
-          docker run --network host -v $(pwd)/zap-results:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+          chmod 777 zap-results
+          docker run --network host \
+            -v $(pwd)/zap-results:/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:65413 \
-            -J zap-report.json \
+            -J zap-report.txt \
             -I || true
+            
       - name: ZAP Quick Summary
         if: always()
         run: |
