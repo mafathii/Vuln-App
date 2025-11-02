@@ -35,7 +35,7 @@ jobs:
         if: always()
         run: |
           echo "🔍 OWASP ZAP Summary:"
-          if [ -f zap-report.json ]; then
+          if [ -f zap-report.txt ]; then
             alerts=$(jq '.site[0].alerts | length' zap-report.txt)
             echo "Total Alerts Found: $alerts"
             jq -r '.site[0].alerts[] | "\(.riskdesc): \(.alert)"' zap-report.txt | head -n 5
