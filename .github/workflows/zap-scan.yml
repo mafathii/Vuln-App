@@ -20,25 +20,30 @@ jobs:
           docker run -d -p 65413:65413 --name dsvpwa dsvpwa
           sleep 15 # Wait for the app to start
 
-      - name: Run OWASP ZAP Baseline Scan
+      - name: Prepare report directory
         run: |
           mkdir -p zap-results
           chmod 777 zap-results
+
+      - name: Run OWASP ZAP Baseline Scan
+        run: |
           docker run --network host \
             -v $(pwd)/zap-results:/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:65413 \
-            -J zap-report.txt \
+            -J zap-report.json \
+            -H zap-report.html \
+            -M zap-report.md
             -I || true
-            
+
       - name: ZAP Quick Summary
         if: always()
         run: |
           echo "🔍 OWASP ZAP Summary:"
-          if [ -f zap-report.txt ]; then
-            alerts=$(jq '.site[0].alerts | length' zap-report.txt)
+          if [ -f zap-results/zap-report.json ]; then
+            alerts=$(jq '.site[0].alerts | length' zap-results/zap-report.json)
             echo "Total Alerts Found: $alerts"
-            jq -r '.site[0].alerts[] | "\(.riskdesc): \(.alert)"' zap-report.txt | head -n 5
+            jq -r '.site[0].alerts[] | "\(.riskdesc): \(.alert)"' zap-results/zap-report.json | head -n 5
           else
             echo "No ZAP report found."
           fi
@@ -48,4 +53,7 @@ jobs:
         if: always()
         with:
           name: zap-report
-          path: zap-results/zap-report.txt
+          path: |
+            zap-results/zap-report.json
+            zap-results/zap-report.html
+            zap-results/zap-report.md
